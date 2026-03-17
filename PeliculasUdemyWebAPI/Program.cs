@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using PeliculasUdemyWebAPI.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -9,6 +12,9 @@ builder.Services.AddOpenApi();
 // Configuracion de Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Configuracion DbContext
+builder.Services.AddDbContext<ApplicationDbContext>(opciones => opciones.UseSqlServer("name=DefaultConnection"));
 
 var app = builder.Build();
 
