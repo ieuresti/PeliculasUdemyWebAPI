@@ -13,6 +13,9 @@ builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Configuracion AutoMapper
+builder.Services.AddAutoMapper(typeof(Program));
+
 // Configuracion DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(opciones => opciones.UseSqlServer("name=DefaultConnection"));
 
