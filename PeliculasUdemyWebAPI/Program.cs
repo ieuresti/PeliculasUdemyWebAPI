@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PeliculasUdemyWebAPI.Data;
+using PeliculasUdemyWebAPI.Repositorio;
+using PeliculasUdemyWebAPI.Repositorio.IRepositorio;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +17,9 @@ builder.Services.AddSwaggerGen();
 
 // Configuracion AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
+
+// Configuracion de inyección de dependencias para el repositorio
+builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 
 // Configuracion DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(opciones => opciones.UseSqlServer("name=DefaultConnection"));

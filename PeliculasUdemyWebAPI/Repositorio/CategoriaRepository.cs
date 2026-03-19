@@ -1,4 +1,5 @@
-﻿using PeliculasUdemyWebAPI.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using PeliculasUdemyWebAPI.Data;
 using PeliculasUdemyWebAPI.Modelos;
 using PeliculasUdemyWebAPI.Repositorio.IRepositorio;
 
@@ -13,49 +14,49 @@ namespace PeliculasUdemyWebAPI.Repositorio
             _context = context;
         }
 
-        public bool ActualizarCategoria(Categoria categoria)
+        public async Task<bool> ActualizarCategoriaAsync(Categoria categoria)
         {
             categoria.FechaCreacion = DateTime.Now;
             _context.Categorias.Update(categoria);
-            return Guardar();
+            return await GuardarAsync();
         }
 
-        public bool BorrarCategoria(Categoria categoria)
+        public async Task<bool> BorrarCategoriaAsync(Categoria categoria)
         {
             _context.Categorias.Remove(categoria);
-            return Guardar();
+            return await GuardarAsync();
         }
 
-        public bool CrearCategoria(Categoria categoria)
+        public async Task<bool> CrearCategoriaAsync(Categoria categoria)
         {
             categoria.FechaCreacion = DateTime.Now;
             _context.Categorias.Add(categoria);
-            return Guardar();
+            return await GuardarAsync();
         }
 
-        public bool ExisteCategoria(int categoriaId)
+        public async Task<bool> ExisteCategoriaAsync(int categoriaId)
         {
-            return _context.Categorias.Any(c => c.Id == categoriaId);
+            return await _context.Categorias.AnyAsync(c => c.Id == categoriaId);
         }
 
-        public bool ExisteCategoria(string nombre)
+        public async Task<bool> ExisteCategoriaAsync(string nombre)
         {
-            return _context.Categorias.Any(c => c.Nombre.ToLower().Trim() == nombre.ToLower().Trim());
+            return await _context.Categorias.AnyAsync(c => c.Nombre.ToLower().Trim() == nombre.ToLower().Trim());
         }
 
-        public Categoria GetCategoria(int categoriaId)
+        public async Task<Categoria?> GetCategoriaAsync(int categoriaId)
         {
-            return _context.Categorias.FirstOrDefault(c => c.Id == categoriaId);
+            return await _context.Categorias.FirstOrDefaultAsync(c => c.Id == categoriaId);
         }
 
-        public ICollection<Categoria> GetCategorias()
+        public async Task<ICollection<Categoria>> GetCategoriasAsync()
         {
-            return _context.Categorias.OrderBy(c => c.Nombre).ToList();
+            return await _context.Categorias.OrderBy(c => c.Nombre).ToListAsync();
         }
 
-        public bool Guardar()
+        public async Task<bool> GuardarAsync()
         {
-            return _context.SaveChanges() >= 0 ? true : false; // Si se guardan los cambios correctamente, SaveChanges devuelve el número de objetos afectados, que será mayor o igual a 0. Si ocurre un error, devolverá un valor negativo.
+            return await _context.SaveChangesAsync() > 0; // Devuelve true si se guardaron los cambios, false en caso contrario
         }
     }
 }

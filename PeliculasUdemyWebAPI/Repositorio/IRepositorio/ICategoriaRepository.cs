@@ -4,13 +4,13 @@ namespace PeliculasUdemyWebAPI.Repositorio.IRepositorio
 {
     public interface ICategoriaRepository
     {
-        ICollection<Categoria> GetCategorias();
-        Categoria GetCategoria(int categoriaId);
-        bool ExisteCategoria(int categoriaId);
-        bool ExisteCategoria(string nombre);
-        bool CrearCategoria(Categoria categoria);
-        bool ActualizarCategoria(Categoria categoria);
-        bool BorrarCategoria(Categoria categoria);
-        bool Guardar();
+        Task<ICollection<Categoria>> GetCategoriasAsync();
+        Task<Categoria?> GetCategoriaAsync(int categoriaId);
+        Task<bool> ExisteCategoriaAsync(int categoriaId);
+        Task<bool> ExisteCategoriaAsync(string nombre);
+        Task<bool> CrearCategoriaAsync(Categoria categoria);
+        Task<bool> ActualizarCategoriaAsync(Categoria categoria);
+        Task<bool> BorrarCategoriaAsync(Categoria categoria);
+        Task<bool> GuardarAsync();
     }
 }
