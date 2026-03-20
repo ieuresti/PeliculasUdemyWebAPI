@@ -1,0 +1,119 @@
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using PeliculasUdemyWebAPI.Modelos;
+using PeliculasUdemyWebAPI.Modelos.DTOs;
+using PeliculasUdemyWebAPI.Repositorio.IRepositorio;
+
+namespace PeliculasUdemyWebAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class PeliculaController : ControllerBase
+    {
+        private readonly IPeliculaRepository peliculaRepository;
+        private readonly IMapper mapper;
+
+        public PeliculaController(IPeliculaRepository peliculaRepository, IMapper mapper)
+        {
+            this.peliculaRepository = peliculaRepository;
+            this.mapper = mapper;
+        }
+
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult> GetPeliculas()
+        {
+            var peliculas = await peliculaRepository.GetPeliculasAsync();
+            var peliculasDTO = mapper.Map<ICollection<PeliculaDTO>>(peliculas);
+            return Ok(peliculasDTO);
+        }
+
+        [HttpGet("{peliculaId:int}", Name = "GetPelicula")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult> GetPelicula(int peliculaId)
+        {
+            var pelicula = await peliculaRepository.GetPeliculaAsync(peliculaId);
+            if (pelicula is null)
+            {
+                return NotFound();
+            }
+            var peliculaDTO = mapper.Map<PeliculaDTO>(pelicula);
+            return Ok(peliculaDTO);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        public async Task<ActionResult> CreatePelicula([FromForm] PeliculaCreacionDTO peliculaCreacionDTO) // FromForm ya que se recibe un archivo a través de un formulario multipart/form-data
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            if (peliculaCreacionDTO is null)
+            {
+                return BadRequest(ModelState);
+            }
+            if (await peliculaRepository.ExistePeliculaAsync(peliculaCreacionDTO.Nombre))
+            {
+                ModelState.AddModelError("", "La película con ese nombre ya existe");
+                return BadRequest(ModelState);
+            }
+
+            // TO DO - Guardar el archivo del poster en el servidor y obtener la ruta para almacenarla en la base de datos
+
+            var pelicula = mapper.Map<Pelicula>(peliculaCreacionDTO);
+            await peliculaRepository.CrearPeliculaAsync(pelicula);
+            var peliculaDTO = mapper.Map<PeliculaDTO>(pelicula);
+            return CreatedAtRoute("GetPelicula", new { peliculaId = peliculaDTO.Id }, peliculaDTO);
+        }
+
+        [HttpPatch("{peliculaId:int}", Name = "UpdatePelicula")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<ActionResult> UpdatePelicula(int peliculaId, [FromForm] PeliculaCreacionDTO peliculaCreacionDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            if (peliculaCreacionDTO is null)
+            {
+                return BadRequest(ModelState);
+            }
+            if (!await peliculaRepository.ExistePeliculaAsync(peliculaId))
+            {
+                return NotFound();
+            }
+
+            // TO DO - Guardar el archivo del poster en el servidor y obtener la ruta para almacenarla en la base de datos
+
+            var pelicula = mapper.Map<Pelicula>(peliculaCreacionDTO);
+            pelicula.Id = peliculaId;
+            await peliculaRepository.ActualizarPeliculaAsync(pelicula);
+            return NoContent();
+        }
+
+        [HttpDelete("{peliculaId:int}", Name = "DeletePelicula")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<ActionResult> DeletePelicula(int peliculaId)
+        {
+            var existePelicula = await peliculaRepository.GetPeliculaAsync(peliculaId);
+            if (existePelicula is null)
+            {
+                return NotFound($"No se encontró la película con ID {peliculaId}");
+            }
+            await peliculaRepository.BorrarPeliculaAsync(existePelicula);
+            return NoContent();
+        }
+    }
+}

@@ -20,6 +20,7 @@ builder.Services.AddAutoMapper(typeof(Program));
 
 // Configuracion de inyección de dependencias para el repositorio
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
+builder.Services.AddScoped<IPeliculaRepository, PeliculaRepository>();
 
 // Configuracion DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(opciones => opciones.UseSqlServer("name=DefaultConnection"));

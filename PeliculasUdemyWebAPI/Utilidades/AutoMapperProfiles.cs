@@ -9,12 +9,20 @@ namespace PeliculasUdemyWebAPI.Utilidades
         public AutoMapperProfiles()
         {
             ConfigurarMapeosCategoria();
+            ConfigurarMapeosPelicula();
         }
 
         private void ConfigurarMapeosCategoria()
         {
             CreateMap<CategoriaCreacionDTO, Categoria>();
             CreateMap<Categoria, CategoriaDTO>();
+        }
+
+        private void ConfigurarMapeosPelicula()
+        {
+            CreateMap<PeliculaCreacionDTO, Pelicula>()
+                .ForMember(destino => destino.Poster, opciones => opciones.Ignore()); // Ignorar el mapeo del campo Poster, ya que se maneja de forma separada
+            CreateMap<Pelicula, PeliculaDTO>();
         }
     }
 }
