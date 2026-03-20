@@ -115,5 +115,35 @@ namespace PeliculasUdemyWebAPI.Controllers
             await peliculaRepository.BorrarPeliculaAsync(existePelicula);
             return NoContent();
         }
+
+        [HttpGet("categoria/{categoriaId:int}", Name = "GetPeliculasEnCategoria")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult> GetPeliculasEnCategoria(int categoriaId)
+        {
+            var peliculasEnCategoria = await peliculaRepository.GetPeliculasEnCategoriaAsync(categoriaId);
+            if (peliculasEnCategoria is null || !peliculasEnCategoria.Any())
+            {
+                return NotFound($"No se encontraron películas en la categoría con ID {categoriaId}");
+            }
+            var peliculasEnCategoriaDTO = mapper.Map<ICollection<PeliculaDTO>>(peliculasEnCategoria);
+            return Ok(peliculasEnCategoriaDTO);
+        }
+
+        [HttpGet("buscar", Name = "BuscarPelicula")]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult> BuscarPelicula([FromQuery] string termino) // FromQuery ya que se recibe el texto a buscar como un parámetro de consulta en la URL
+        {
+            var peliculas = await peliculaRepository.BuscarPeliculaAsync(termino);
+            if (peliculas is null || !peliculas.Any())
+            {
+                return NotFound($"No se encontraron películas con el texto: '{termino}'");
+            }
+            var peliculasDTO = mapper.Map<ICollection<PeliculaDTO>>(peliculas);
+            return Ok(peliculasDTO);
+        }
     }
 }
