@@ -1,6 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using PeliculasUdemyWebAPI.Data;
 using PeliculasUdemyWebAPI.Modelos.DTOs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -15,16 +20,37 @@ namespace PeliculasUdemyWebAPI.Controllers
         private readonly UserManager<IdentityUser> userManager;
         private readonly SignInManager<IdentityUser> signInManager;
         private readonly IConfiguration configuration;
+        private readonly ApplicationDbContext context;
+        private readonly IMapper mapper;
 
         public UsuariosController(UserManager<IdentityUser> userManager, 
-            SignInManager<IdentityUser> signInManager, IConfiguration configuration)
+            SignInManager<IdentityUser> signInManager, IConfiguration configuration, 
+            ApplicationDbContext context, IMapper mapper)
         {
             this.userManager = userManager;
             this.signInManager = signInManager;
             this.configuration = configuration;
+            this.context = context;
+            this.mapper = mapper;
+        }
+
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<UsuarioDTO>>> GetUsuarios()
+        {
+            var queryable = context.Users.AsQueryable();
+            var usuarios = await queryable
+                .ProjectTo<UsuarioDTO>(mapper.ConfigurationProvider)
+                .OrderBy(x => x.Email)
+                .ToListAsync();
+            return usuarios;
         }
 
         [HttpPost("registrar")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [AllowAnonymous]
         public async Task<ActionResult<RespuestaAutenticacionDTO>> Registrar(CreadencialesUsuarioDTO credencialesUsuarioDTO)
         {
             // Crear un nuevo usuario con el email y password proporcionados
@@ -33,6 +59,21 @@ namespace PeliculasUdemyWebAPI.Controllers
                 Email = credencialesUsuarioDTO.Email,
                 UserName = credencialesUsuarioDTO.Email
             };
+
+            // Verificar si ya existe un usuario registrado con el mismo email
+            var existeUsuario = await userManager.FindByEmailAsync(credencialesUsuarioDTO.Email);
+            if (existeUsuario is not null)
+            {
+                var errores = new List<IdentityError>
+                {
+                    new IdentityError
+                    {
+                        Code = "UsuarioExistente",
+                        Description = "Ya existe un usuario registrado con ese email"
+                    }
+                };
+                return BadRequest(errores);
+            }
 
             // Intentar crear el usuario en la base de datos
             var resultado = await userManager.CreateAsync(usuario, credencialesUsuarioDTO.Password);
@@ -49,6 +90,9 @@ namespace PeliculasUdemyWebAPI.Controllers
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<RespuestaAutenticacionDTO>> Login(CreadencialesUsuarioDTO credencialesUsuarioDTO)
         {
             // Buscar el usuario en la base de datos por su email
@@ -74,6 +118,38 @@ namespace PeliculasUdemyWebAPI.Controllers
                 var errores = ConstruirLoginIncorrecto();
                 return BadRequest(errores);
             }
+        }
+
+        [HttpPost("hacerAdmin")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> HacerAdmin(EditarClaimDTO editarClaimDTO)
+        {
+            var usuario = await userManager.FindByEmailAsync(editarClaimDTO.Email);
+
+            if (usuario is null)
+            {
+                return NotFound();
+            }
+            // Agregar el claim "esAdmin" al usuario para otorgarle privilegios de administrador
+            await userManager.AddClaimAsync(usuario, new Claim("esAdmin", "true"));
+            return NoContent();
+        }
+
+        [HttpPost("removerAdmin")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> RemoverAdmin(EditarClaimDTO editarClaimDTO)
+        {
+            var usuario = await userManager.FindByEmailAsync(editarClaimDTO.Email);
+
+            if (usuario is null)
+            {
+                return NotFound();
+            }
+            // Eliminar el claim "esAdmin" del usuario para revocar sus privilegios de administrador
+            await userManager.RemoveClaimAsync(usuario, new Claim("esAdmin", "true"));
+            return NoContent();
         }
 
         private async Task<RespuestaAutenticacionDTO> ConstruirToken(IdentityUser identityUser)

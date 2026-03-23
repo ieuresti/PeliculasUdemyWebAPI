@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PeliculasUdemyWebAPI.Modelos;
 using PeliculasUdemyWebAPI.Modelos.DTOs;
@@ -8,6 +10,7 @@ namespace PeliculasUdemyWebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "esAdmin")]
     public class CategoriasController : ControllerBase
     {
         private readonly ICategoriaRepository categoriaRepository;
@@ -20,6 +23,7 @@ namespace PeliculasUdemyWebAPI.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult> GetCategorias()
@@ -30,6 +34,7 @@ namespace PeliculasUdemyWebAPI.Controllers
         }
 
         [HttpGet("{categoriaId:int}", Name = "GetCategoria")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]

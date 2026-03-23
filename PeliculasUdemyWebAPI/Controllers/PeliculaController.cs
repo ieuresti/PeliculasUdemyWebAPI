@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PeliculasUdemyWebAPI.Modelos;
@@ -9,6 +11,7 @@ namespace PeliculasUdemyWebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "esAdmin")]
     public class PeliculaController : ControllerBase
     {
         private readonly IPeliculaRepository peliculaRepository;
@@ -21,6 +24,7 @@ namespace PeliculasUdemyWebAPI.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult> GetPeliculas()
@@ -31,6 +35,7 @@ namespace PeliculasUdemyWebAPI.Controllers
         }
 
         [HttpGet("{peliculaId:int}", Name = "GetPelicula")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -117,6 +122,7 @@ namespace PeliculasUdemyWebAPI.Controllers
         }
 
         [HttpGet("categoria/{categoriaId:int}", Name = "GetPeliculasEnCategoria")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -132,6 +138,7 @@ namespace PeliculasUdemyWebAPI.Controllers
         }
 
         [HttpGet("buscar", Name = "BuscarPelicula")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
