@@ -53,13 +53,6 @@ namespace PeliculasUdemyWebAPI.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<RespuestaAutenticacionDTO>> Registrar(CreadencialesUsuarioDTO credencialesUsuarioDTO)
         {
-            // Crear un nuevo usuario con el email y password proporcionados
-            var usuario = new IdentityUser
-            {
-                Email = credencialesUsuarioDTO.Email,
-                UserName = credencialesUsuarioDTO.Email
-            };
-
             // Verificar si ya existe un usuario registrado con el mismo email
             var existeUsuario = await userManager.FindByEmailAsync(credencialesUsuarioDTO.Email);
             if (existeUsuario is not null)
@@ -74,6 +67,13 @@ namespace PeliculasUdemyWebAPI.Controllers
                 };
                 return BadRequest(errores);
             }
+
+            // Crear un nuevo usuario con el email y password proporcionados
+            var usuario = new IdentityUser
+            {
+                Email = credencialesUsuarioDTO.Email,
+                UserName = credencialesUsuarioDTO.Email
+            };
 
             // Intentar crear el usuario en la base de datos
             var resultado = await userManager.CreateAsync(usuario, credencialesUsuarioDTO.Password);
@@ -157,14 +157,19 @@ namespace PeliculasUdemyWebAPI.Controllers
             // Agregar los claims que se quieran incluir en el token
             var claims = new List<Claim>
             {
+                new Claim("id", identityUser.Id),
                 new Claim("email", identityUser.Email!),
-                new Claim("id", identityUser.Id)
+                new Claim("username", identityUser.UserName!),
+                new Claim("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()), // Issued At (cúando se emitió el token)
             };
 
-            // Agregar los claims que se tengan en la base de datos
-            var claimsDB = await userManager.GetClaimsAsync(identityUser);
+            // Agregar roles del usuario
+            var roles = await userManager.GetRolesAsync(identityUser);
+            claims.AddRange(roles.Select(rol => new Claim(ClaimTypes.Role, rol)));
 
-            // Agregar los claims de la base de datos a los claims que se van a incluir en el token
+            // Obtener los claims personalizados que se hayan agregado al usuario en la base de datos
+            var claimsDB = await userManager.GetClaimsAsync(identityUser);
+            // Agregar los claims personalizados al token
             claims.AddRange(claimsDB);
 
             // Crear la llave y credenciales que se van a usar para firmar el token
@@ -172,7 +177,7 @@ namespace PeliculasUdemyWebAPI.Controllers
             var credenciales = new SigningCredentials(llave, SecurityAlgorithms.HmacSha256);
 
             // Definir la expiración del token
-            var expiracion = DateTime.UtcNow.AddYears(1);
+            var expiracion = DateTime.UtcNow.AddHours(1);
 
             // Crear el token de seguridad
             var tokenDeSeguridad = new JwtSecurityToken(issuer: null, audience: null, claims: claims,

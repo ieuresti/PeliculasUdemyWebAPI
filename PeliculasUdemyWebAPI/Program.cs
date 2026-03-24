@@ -29,12 +29,17 @@ builder.Services.AddDbContext<ApplicationDbContext>(opciones =>
     opciones.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Configuracion de Identity
-builder.Services.AddIdentityCore<IdentityUser>()
-    .AddEntityFrameworkStores<ApplicationDbContext>() // Configuracion para utilizar Entity Framework con Identity
-    .AddDefaultTokenProviders(); // Configuracion para utilizar los token providers por defecto de Identity (para generar tokens de confirmacion de email, restablecimiento de contraseña, etc.)
-
-builder.Services.AddScoped<UserManager<IdentityUser>>(); // Nos va a permitir gestionar los usuarios (crear, eliminar, actualizar, etc.)
-builder.Services.AddScoped<SignInManager<IdentityUser>>(); // Nos va a permitir gestionar el inicio de sesión de los usuarios (iniciar sesión, cerrar sesión, etc.)
+builder.Services.AddIdentity<IdentityUser, IdentityRole>(opciones =>
+{
+    // Configuración de contraseñas
+    opciones.Password.RequireDigit = true;
+    opciones.Password.RequireLowercase = true;
+    opciones.Password.RequireUppercase = true;
+    opciones.Password.RequireNonAlphanumeric = false;
+    opciones.Password.RequiredLength = 6;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>() // Configuracion para utilizar Entity Framework Core como el almacenamiento de datos para Identity
+.AddDefaultTokenProviders(); // Configuracion para utilizar los token providers por defecto de Identity (para generar tokens de confirmacion de email, restablecimiento de contraseña, etc.)
 
 // Configuracion del servicio de autenticacion JWT
 builder.Services.AddAuthentication().AddJwtBearer(opciones =>
