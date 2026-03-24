@@ -15,6 +15,20 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var origenesPermitidos = builder.Configuration.GetValue<string>("Cors:AllowedOrigins")!.Split(","); // Obtener los orígenes permitidos desde la configuración (appsettings.json) y dividirlos en un array utilizando la coma como separador
+
+// Habilitar CORS
+builder.Services.AddCors(opciones =>
+{
+    opciones.AddDefaultPolicy(opcionesCORS =>
+    {
+        opcionesCORS.WithOrigins(origenesPermitidos)
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials();
+    });
+});
+
 // Configuracion AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
 
@@ -73,6 +87,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors();
 
 app.UseAuthentication();
 
