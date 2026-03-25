@@ -24,6 +24,7 @@ namespace PeliculasUdemyWebAPI.Controllers
 
         [HttpGet]
         [AllowAnonymous]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult> GetCategorias()
@@ -35,6 +36,7 @@ namespace PeliculasUdemyWebAPI.Controllers
 
         [HttpGet("{categoriaId:int}", Name = "GetCategoria")]
         [AllowAnonymous]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]

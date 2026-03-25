@@ -13,6 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
+// Configuracion para habilitar el caché
+builder.Services.AddResponseCaching();
+
 // Configuracion de Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opciones =>
@@ -129,6 +132,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors();
+
+app.UseResponseCaching();
 
 app.UseAuthentication();
 

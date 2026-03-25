@@ -24,6 +24,7 @@ namespace PeliculasUdemyWebAPI.Controllers
 
         [HttpGet]
         [AllowAnonymous]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult> GetPeliculas()
@@ -35,6 +36,7 @@ namespace PeliculasUdemyWebAPI.Controllers
 
         [HttpGet("{peliculaId:int}", Name = "GetPelicula")]
         [AllowAnonymous]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -126,6 +128,7 @@ namespace PeliculasUdemyWebAPI.Controllers
 
         [HttpGet("categoria/{categoriaId:int}", Name = "GetPeliculasEnCategoria")]
         [AllowAnonymous]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -142,6 +145,7 @@ namespace PeliculasUdemyWebAPI.Controllers
 
         [HttpGet("buscar", Name = "BuscarPelicula")]
         [AllowAnonymous]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
