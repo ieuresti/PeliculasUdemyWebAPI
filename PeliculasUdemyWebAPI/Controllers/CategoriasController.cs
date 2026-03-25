@@ -51,6 +51,7 @@ namespace PeliculasUdemyWebAPI.Controllers
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<ActionResult> CreateCategoria([FromBody] CategoriaCreacionDTO categoriaCreacionDTO)
@@ -77,6 +78,7 @@ namespace PeliculasUdemyWebAPI.Controllers
 
         [HttpPatch("{categoriaId:int}", Name = "UpdatePatchCategoria")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -100,6 +102,7 @@ namespace PeliculasUdemyWebAPI.Controllers
 
         [HttpPut("{categoriaId:int}", Name = "UpdatePutCategoria")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -121,6 +124,7 @@ namespace PeliculasUdemyWebAPI.Controllers
         }
 
         [HttpDelete("{categoriaId:int}", Name = "DeleteCategoria")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]

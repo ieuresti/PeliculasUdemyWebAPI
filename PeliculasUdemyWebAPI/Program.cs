@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using PeliculasUdemyWebAPI.Data;
 using PeliculasUdemyWebAPI.Repositorio;
 using PeliculasUdemyWebAPI.Repositorio.IRepositorio;
@@ -13,7 +14,39 @@ builder.Services.AddControllers();
 
 // Configuracion de Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(opciones =>
+{
+    // Definir esquema de seguridad JWT
+    opciones.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization", // El nombre del encabezado HTTP que se utilizará para enviar el token JWT (por lo general, "Authorization")
+        Description = 
+            "Autenticación JWT usando el esquema Bearer. \r\n\r\n " +
+            "Ingrese 'Bearer' seguido de un espacio y luego el token JWT. \r\n\r\n " +
+            "Ejemplo: \"Bearer eyJhbGciOi\"",
+        In = ParameterLocation.Header, // El token JWT se envía en el encabezado de la solicitud HTTP
+        Scheme = "Bearer"
+    });
+    // Aplicar seguridad a todos los endpoints
+    opciones.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header
+            },
+            new List<string>() // No se requieren scopes específicos para esta configuración, por lo que se deja una lista vacía
+        }
+    });
+}
+);
 
 var origenesPermitidos = builder.Configuration.GetValue<string>("Cors:AllowedOrigins")!.Split(","); // Obtener los orígenes permitidos desde la configuración (appsettings.json) y dividirlos en un array utilizando la coma como separador
 

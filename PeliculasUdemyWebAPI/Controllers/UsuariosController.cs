@@ -50,9 +50,9 @@ namespace PeliculasUdemyWebAPI.Controllers
         }
 
         [HttpPost("registrar")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [AllowAnonymous]
         public async Task<ActionResult<RespuestaAutenticacionDTO>> Registrar(CreadencialesUsuarioDTO credencialesUsuarioDTO)
         {
             // Verificar si ya existe un usuario registrado con el mismo email
@@ -123,6 +123,7 @@ namespace PeliculasUdemyWebAPI.Controllers
         }
 
         [HttpPost("hacerAdmin")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> HacerAdmin(EditarClaimDTO editarClaimDTO)
@@ -139,6 +140,7 @@ namespace PeliculasUdemyWebAPI.Controllers
         }
 
         [HttpPost("removerAdmin")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> RemoverAdmin(EditarClaimDTO editarClaimDTO)
