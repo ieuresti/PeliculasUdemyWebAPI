@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using PeliculasUdemyWebAPI.Data;
 using PeliculasUdemyWebAPI.Repositorio;
 using PeliculasUdemyWebAPI.Repositorio.IRepositorio;
+using Swashbuckle.AspNetCore.SwaggerUI;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,16 +17,19 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opciones =>
 {
-    // Definir esquema de seguridad JWT
+    // Definir esquema de seguridad JWT (Bearer Token)
     opciones.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization", // El nombre del encabezado HTTP que se utilizará para enviar el token JWT (por lo general, "Authorization")
-        Description = 
-            "Autenticación JWT usando el esquema Bearer. \r\n\r\n " +
-            "Ingrese 'Bearer' seguido de un espacio y luego el token JWT. \r\n\r\n " +
-            "Ejemplo: \"Bearer eyJhbGciOi\"",
-        In = ParameterLocation.Header, // El token JWT se envía en el encabezado de la solicitud HTTP
-        Scheme = "Bearer"
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description =
+            "Autenticación JWT usando el esquema Bearer.\n\n" +
+            "Ingrese **solo** el token JWT en el campo de texto a continuación.\n\n" +
+            "Ejemplo: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`\n\n" +
+            "**No** es necesario agregar 'Bearer' al inicio, Swagger lo agrega automáticamente."
     });
     // Aplicar seguridad a todos los endpoints
     opciones.AddSecurityRequirement(new OpenApiSecurityRequirement()
@@ -37,12 +41,9 @@ builder.Services.AddSwaggerGen(opciones =>
                 {
                     Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
-                },
-                Scheme = "oauth2",
-                Name = "Bearer",
-                In = ParameterLocation.Header
+                }
             },
-            new List<string>() // No se requieren scopes específicos para esta configuración, por lo que se deja una lista vacía
+            Array.Empty<string>() // No se requieren scopes específicos para este esquema de seguridad, por lo que se pasa un array vacío
         }
     });
 }
@@ -116,7 +117,13 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger(); // Habilita el middleware de Swagger
-    app.UseSwaggerUI(); // Habilita la interfaz de usuario de Swagger
+    app.UseSwaggerUI(opciones =>
+    {
+        opciones.DefaultModelsExpandDepth(-1); // Ocultar modelos de los endpoints por defecto
+        opciones.DocExpansion(DocExpansion.None); // Colapsar todos los endpoints por defecto
+        opciones.DisplayRequestDuration(); // Mostrar tiempos de respuesta
+        opciones.EnableDeepLinking(); // URLs directas a cada endpoint para facilitar compartir enlaces a endpoints especifícos
+    }); // Habilita la interfaz de usuario de Swagger
 }
 
 app.UseHttpsRedirection();
