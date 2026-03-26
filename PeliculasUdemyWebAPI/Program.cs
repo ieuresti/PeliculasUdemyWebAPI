@@ -1,10 +1,15 @@
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PeliculasUdemyWebAPI.Configuration;
 using PeliculasUdemyWebAPI.Data;
 using PeliculasUdemyWebAPI.Repositorio;
 using PeliculasUdemyWebAPI.Repositorio.IRepositorio;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using System.Text;
 
@@ -16,8 +21,25 @@ builder.Services.AddControllers();
 // Configuracion para habilitar el caché
 builder.Services.AddResponseCaching();
 
+// Configuracion para habilitar la versionamiento de la API
+var apiVersioningBuilder = builder.Services.AddApiVersioning(opciones =>
+{
+    opciones.DefaultApiVersion = new ApiVersion(1, 0);
+    opciones.AssumeDefaultVersionWhenUnspecified = true;
+    opciones.ReportApiVersions = true;
+    opciones.ApiVersionReader = new UrlSegmentApiVersionReader(); // Esto es para que la version de la API se especifique en la URL (ejemplo: /api/v1/categorias)
+});
+
+apiVersioningBuilder.AddApiExplorer(opciones =>
+{
+    opciones.GroupNameFormat = "'v'VVV"; // Esto es para que el grupo de versiones se muestre en el formato "v1", "v2", etc. en la documentación de Swagger
+    opciones.SubstituteApiVersionInUrl = true; // Esto es para que la versión de la API se sustituya en la URL de los endpoints en la documentación de Swagger
+});
+
 // Configuracion de Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
+// Registrar la clase de configuración de Swagger para que se ejecute al configurar las opciones de SwaggerGen
+builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.AddSwaggerGen(opciones =>
 {
     // Definir esquema de seguridad JWT (Bearer Token)
@@ -122,6 +144,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger(); // Habilita el middleware de Swagger
     app.UseSwaggerUI(opciones =>
     {
+        var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+
+        // Esto es para agregar un endpoint de Swagger por cada versión de API descubierta, mostrando el nombre del grupo de versiones en el título del endpoint (ejemplo: "API de Películas V1", "API de Películas V2", etc.)
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            opciones.SwaggerEndpoint(
+                $"/swagger/{description.GroupName}/swagger.json",
+                $"API de Películas {description.GroupName.ToUpperInvariant()}"
+            );
+        }
+
         opciones.DefaultModelsExpandDepth(-1); // Ocultar modelos de los endpoints por defecto
         opciones.DocExpansion(DocExpansion.None); // Colapsar todos los endpoints por defecto
         opciones.DisplayRequestDuration(); // Mostrar tiempos de respuesta

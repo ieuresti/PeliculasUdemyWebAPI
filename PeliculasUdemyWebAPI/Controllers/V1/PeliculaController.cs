@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Asp.Versioning;
+using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,10 +7,11 @@ using PeliculasUdemyWebAPI.Modelos;
 using PeliculasUdemyWebAPI.Modelos.DTOs;
 using PeliculasUdemyWebAPI.Repositorio.IRepositorio;
 
-namespace PeliculasUdemyWebAPI.Controllers
+namespace PeliculasUdemyWebAPI.Controllers.V1
 {
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "esAdmin")]
     public class PeliculaController : ControllerBase
     {
