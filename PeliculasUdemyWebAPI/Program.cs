@@ -9,6 +9,7 @@ using PeliculasUdemyWebAPI.Configuration;
 using PeliculasUdemyWebAPI.Data;
 using PeliculasUdemyWebAPI.Repositorio;
 using PeliculasUdemyWebAPI.Repositorio.IRepositorio;
+using PeliculasUdemyWebAPI.Servicios;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using System.Text;
@@ -95,6 +96,8 @@ builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 builder.Services.AddScoped<IPeliculaRepository, PeliculaRepository>();
 
+// Configuracion de archivos
+builder.Services.AddTransient<IAlmacenadorArchivos, AlmacenadorArchivosLocal>();
 builder.Services.AddHttpContextAccessor(); // Esto es para poder acceder al HttpContext en el repositorio (para obtener el usuario logueado, etc.)
 
 // Configuracion DbContext
@@ -163,6 +166,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 
 app.UseCors();
 

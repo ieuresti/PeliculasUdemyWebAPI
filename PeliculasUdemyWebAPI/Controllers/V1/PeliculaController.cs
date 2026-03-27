@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using PeliculasUdemyWebAPI.Modelos;
 using PeliculasUdemyWebAPI.Modelos.DTOs;
 using PeliculasUdemyWebAPI.Repositorio.IRepositorio;
+using PeliculasUdemyWebAPI.Servicios;
 
 namespace PeliculasUdemyWebAPI.Controllers.V1
 {
@@ -16,11 +17,14 @@ namespace PeliculasUdemyWebAPI.Controllers.V1
     public class PeliculaController : ControllerBase
     {
         private readonly IPeliculaRepository peliculaRepository;
+        private readonly IAlmacenadorArchivos almacenadorArchivos;
         private readonly IMapper mapper;
+        private readonly string contenedor = "peliculas"; // Nombre del contenedor/carpeta donde se almacenarán los archivos de películas
 
-        public PeliculaController(IPeliculaRepository peliculaRepository, IMapper mapper)
+        public PeliculaController(IPeliculaRepository peliculaRepository, IAlmacenadorArchivos almacenadorArchivos, IMapper mapper)
         {
             this.peliculaRepository = peliculaRepository;
+            this.almacenadorArchivos = almacenadorArchivos;
             this.mapper = mapper;
         }
 
@@ -74,9 +78,14 @@ namespace PeliculasUdemyWebAPI.Controllers.V1
                 return BadRequest(ModelState);
             }
 
-            // TO DO - Guardar el archivo del poster en el servidor y obtener la ruta para almacenarla en la base de datos
+            var pelicula = mapper.Map<Pelicula>(peliculaCreacionDTO); // Mapeamos el DTO a la entidad Pelicula
+            if (peliculaCreacionDTO.Poster is not null)
+            {
+                // Si se ha enviado un archivo de poster, lo almacenamos y obtenemos la URL para guardarla en la base de datos
+                var url = await almacenadorArchivos.Almacenar(contenedor, peliculaCreacionDTO.Poster);
+                pelicula.Poster = url;
+            }
 
-            var pelicula = mapper.Map<Pelicula>(peliculaCreacionDTO);
             await peliculaRepository.CrearPeliculaAsync(pelicula);
             var peliculaDTO = mapper.Map<PeliculaDTO>(pelicula);
             return CreatedAtRoute("GetPelicula", new { peliculaId = peliculaDTO.Id }, peliculaDTO);
@@ -103,10 +112,14 @@ namespace PeliculasUdemyWebAPI.Controllers.V1
                 return NotFound();
             }
 
-            // TO DO - Guardar el archivo del poster en el servidor y obtener la ruta para almacenarla en la base de datos
-
             var pelicula = mapper.Map<Pelicula>(peliculaCreacionDTO);
+            if (peliculaCreacionDTO.Poster is not null)
+            {
+                // Si se ha enviado un nuevo archivo de poster, lo almacenamos y obtenemos la URL para actualizarla en la base de datos. Además, eliminamos el archivo anterior si existía.
+                pelicula.Poster = await almacenadorArchivos.Editar(pelicula.Poster, contenedor, peliculaCreacionDTO.Poster);
+            }
             pelicula.Id = peliculaId;
+
             await peliculaRepository.ActualizarPeliculaAsync(pelicula);
             return NoContent();
         }
