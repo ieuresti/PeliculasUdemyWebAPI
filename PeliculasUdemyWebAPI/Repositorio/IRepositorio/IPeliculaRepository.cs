@@ -4,7 +4,8 @@ namespace PeliculasUdemyWebAPI.Repositorio.IRepositorio
 {
     public interface IPeliculaRepository
     {
-        Task<ICollection<Pelicula>> GetPeliculasAsync();
+        Task<ICollection<Pelicula>> GetPeliculasAsync(int pageNumber, int pageSize);
+        int GetTotalPeliculas();
         Task<ICollection<Pelicula>> GetPeliculasEnCategoriaAsync(int categoriaId);
         Task<IEnumerable<Pelicula>> BuscarPeliculaAsync(string nombre);
         Task<Pelicula?> GetPeliculaAsync(int peliculaId);

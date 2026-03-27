@@ -61,9 +61,13 @@ namespace PeliculasUdemyWebAPI.Repositorio
             return await context.Peliculas.FirstOrDefaultAsync(p => p.Id == peliculaId);
         }
 
-        public async Task<ICollection<Pelicula>> GetPeliculasAsync()
+        public async Task<ICollection<Pelicula>> GetPeliculasAsync(int pageNumber, int pageSize)
         {
-            return await context.Peliculas.OrderBy(p => p.Nombre).ToListAsync();
+            return await context.Peliculas
+                .OrderBy(p => p.Nombre)
+                .Skip((pageNumber - 1) * pageSize) // Calcula el número de registros a omitir según la página actual y el tamaño de página
+                .Take(pageSize) // Toma el número de registros según el tamaño de página
+                .ToListAsync();
         }
 
         public async Task<ICollection<Pelicula>> GetPeliculasEnCategoriaAsync(int categoriaId)
@@ -72,6 +76,11 @@ namespace PeliculasUdemyWebAPI.Repositorio
                 .Where(p => p.CategoriaId == categoriaId)
                 .OrderBy(p => p.Nombre)
                 .ToListAsync();
+        }
+
+        public int GetTotalPeliculas()
+        {
+            return context.Peliculas.Count();
         }
 
         public async Task<bool> GuardarAsync()

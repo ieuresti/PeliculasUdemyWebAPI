@@ -32,12 +32,30 @@ namespace PeliculasUdemyWebAPI.Controllers.V1
         [AllowAnonymous]
         [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult> GetPeliculas()
+        public async Task<ActionResult> GetPeliculas([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var peliculas = await peliculaRepository.GetPeliculasAsync();
+            var totalPeliculas = peliculaRepository.GetTotalPeliculas();
+            var peliculas = await peliculaRepository.GetPeliculasAsync(pageNumber, pageSize);
+
+            if (peliculas is null || !peliculas.Any())
+            {
+                return NotFound("No se encontraron películas");
+            }
+
             var peliculasDTO = mapper.Map<ICollection<PeliculaDTO>>(peliculas);
-            return Ok(peliculasDTO);
+
+            var response = new
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling((double)totalPeliculas / pageSize),
+                TotalItems = totalPeliculas,
+                Items = peliculasDTO
+            };
+
+            return Ok(response);
         }
 
         [HttpGet("{peliculaId:int}", Name = "GetPelicula")]
