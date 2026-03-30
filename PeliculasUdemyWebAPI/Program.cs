@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OfficeOpenXml;
 using PeliculasUdemyWebAPI.Configuration;
 using PeliculasUdemyWebAPI.Data;
 using PeliculasUdemyWebAPI.Repositorio;
@@ -15,6 +16,9 @@ using Swashbuckle.AspNetCore.SwaggerUI;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configurar licencia de EPPlus (no comercial)
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -95,6 +99,7 @@ builder.Services.AddAutoMapper(typeof(Program));
 // Configuracion de inyección de dependencias para el repositorio
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 builder.Services.AddScoped<IPeliculaRepository, PeliculaRepository>();
+builder.Services.AddScoped<ICategoriaImportacionService, CategoriaImportacionService>();
 
 // Configuracion de archivos
 builder.Services.AddTransient<IAlmacenadorArchivos, AlmacenadorArchivosLocal>();
