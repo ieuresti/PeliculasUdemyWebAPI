@@ -98,6 +98,7 @@ builder.Services.AddAutoMapper(typeof(Program));
 
 // Configuracion de inyección de dependencias para el repositorio
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
+builder.Services.AddScoped<IActorRepository, ActorRepository>();
 builder.Services.AddScoped<IPeliculaRepository, PeliculaRepository>();
 builder.Services.AddScoped<ICategoriaImportacionService, CategoriaImportacionService>();
 
