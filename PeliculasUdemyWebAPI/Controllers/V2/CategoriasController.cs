@@ -17,11 +17,11 @@ namespace PeliculasUdemyWebAPI.Controllers.V2
     public class CategoriasController : ControllerBase
     {
         private readonly ICategoriaRepository categoriaRepository;
-        private readonly ICategoriaImportacionService importacionService;
+        private readonly IImportacionExcelService importacionService;
         private readonly IMapper mapper;
 
         public CategoriasController(ICategoriaRepository categoriaRepository,
-            ICategoriaImportacionService importacionService, IMapper mapper)
+            IImportacionExcelService importacionService, IMapper mapper)
         {
             this.categoriaRepository = categoriaRepository;
             this.importacionService = importacionService;
@@ -47,12 +47,12 @@ namespace PeliculasUdemyWebAPI.Controllers.V2
         }
 
         [HttpPost("importar-excel")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CategoriaImportacionResultadoDTO))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ImportacionResultadoDTO))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status415UnsupportedMediaType)]
-        public async Task<ActionResult<CategoriaImportacionResultadoDTO>> ImportarDesdeExcel(IFormFile archivo)
+        public async Task<ActionResult<ImportacionResultadoDTO>> ImportarDesdeExcel(IFormFile archivo)
         {
             // Validar que se envió un archivo
             if (archivo == null || archivo.Length == 0)
@@ -78,19 +78,20 @@ namespace PeliculasUdemyWebAPI.Controllers.V2
             {
                 using var stream = archivo.OpenReadStream(); // Abrir el archivo como stream para procesarlo sin cargarlo completamente en memoria
 
-                // Función para guardar categoría
-                async Task<bool> GuardarCategoria(Categoria categoria)
-                {
-                    // Verificar si ya existe
-                    if (await categoriaRepository.ExisteCategoriaAsync(categoria.Nombre))
+                var resultado = await importacionService.ImportarDesdeExcelAsync<CategoriaCreacionDTO, Categoria>(
+                    stream,
+                    new[] { "Nombre" }, // Columnas esperadas
+                    dto => mapper.Map<Categoria>(dto), // Convertir DTO a entidad
+                    async categoria =>
                     {
-                        return false;
+                        if (await categoriaRepository.ExisteCategoriaAsync(categoria.Nombre))
+                        {
+                            return false; // Indicar que no se creó porque ya existe una categoría con ese nombre
+                        }
+
+                        return await categoriaRepository.CrearCategoriaAsync(categoria);
                     }
-
-                    return await categoriaRepository.CrearCategoriaAsync(categoria);
-                }
-
-                var resultado = await importacionService.ImportarDesdeExcelAsync(stream, GuardarCategoria);
+                );
 
                 return Ok(resultado);
             }
@@ -105,29 +106,18 @@ namespace PeliculasUdemyWebAPI.Controllers.V2
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult DescargarPlantillaExcel()
         {
-            using var package = new OfficeOpenXml.ExcelPackage();
+            var columnas = new[] { "Nombre" };
+            var datosEjemplo = new[]
+            {
+                new[] { "Acción" },
+                new[] { "Comedia" },
+                new[] { "Drama" }
+            };
 
-            var worksheet = package.Workbook.Worksheets.Add("Categorías");
-
-            // Encabezados
-            worksheet.Cells[1, 1].Value = "Nombre";
-            worksheet.Cells[1, 1].Style.Font.Bold = true;
-
-            // Ejemplos
-            worksheet.Cells[2, 1].Value = "Acción";
-            worksheet.Cells[3, 1].Value = "Comedia";
-            worksheet.Cells[4, 1].Value = "Drama";
-
-            // Ajustar ancho de columnas
-            worksheet.Cells.AutoFitColumns();
-
-            // Guardar el paquete en un MemoryStream para devolverlo como archivo descargable
-            var stream = new MemoryStream();
-            package.SaveAs(stream);
-            stream.Position = 0; // Reiniciar la posición del stream al inicio para que se pueda leer correctamente al descargar el archivo
-
+            var bytes = importacionService.GenerarPlantilla("Categorías", columnas, datosEjemplo);
             var fileName = $"PlantillaCategorias_{DateTime.Now:yyyyMMdd}.xlsx";
-            return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
     }
 }

@@ -1,11 +1,11 @@
 ﻿namespace PeliculasUdemyWebAPI.Modelos.DTOs
 {
-    // DTO para representar el resultado de la importación de categorías desde un archivo Excel
-    public class CategoriaImportacionResultadoDTO
+    // DTO genérico para representar el resultado de cualquier importación desde un archivo Excel
+    public class ImportacionResultadoDTO
     {
         public int TotalFilas { get; set; }
-        public int CategoriasCreadas { get; set; }
-        public int CategoriasConErrores { get; set; }
+        public int RegistrosCreados { get; set; }
+        public int RegistrosConErrores { get; set; }
         public List<ErrorImportacionDTO> Errores { get; set; } = new(); // Inicializamos la lista de errores para evitar null reference exceptions
     }
 

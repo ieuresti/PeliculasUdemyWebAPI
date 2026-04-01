@@ -100,7 +100,7 @@ builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 builder.Services.AddScoped<IActorRepository, ActorRepository>();
 builder.Services.AddScoped<IPeliculaRepository, PeliculaRepository>();
-builder.Services.AddScoped<ICategoriaImportacionService, CategoriaImportacionService>();
+builder.Services.AddScoped<IImportacionExcelService, ImportacionExcelService>();
 
 // Configuracion de archivos
 builder.Services.AddTransient<IAlmacenadorArchivos, AlmacenadorArchivosLocal>();
