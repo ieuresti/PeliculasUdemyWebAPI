@@ -28,7 +28,7 @@ namespace PeliculasUdemyWebAPI.Servicios
             _mapper = mapper;
         }
 
-        // Método genérico para importar datos desde Excel, validando con DataAnnotations y reportando errores detallados
+        // Método genérico para importar datos desde Excel
         public async Task<ImportacionResultadoDTO> ImportarDesdeExcelAsync<TDto, TEntity>(
             Stream archivoExcel,
             string[] columnasEsperadas,
@@ -73,7 +73,21 @@ namespace PeliculasUdemyWebAPI.Servicios
             {
                 try
                 {
-                    var dto = MapearFilaADto<TDto>(worksheet, fila, columnasEsperadas);
+                    // Mapear con validación de conversión
+                    var (dto, erroresConversion) = MapearFilaADtoConValidacion<TDto>(worksheet, fila, columnasEsperadas);
+
+                    // Si hubo errores de conversión de tipos, agregarlos y continuar con la siguiente fila
+                    if (erroresConversion.Any())
+                    {
+                        resultado.Errores.AddRange(erroresConversion.Select(e => new ErrorImportacionDTO
+                        {
+                            Fila = fila,
+                            Campo = e.Campo,
+                            Mensaje = e.Mensaje
+                        }));
+                        resultado.RegistrosConErrores++;
+                        continue;
+                    }
 
                     // Validar el DTO utilizando DataAnnotations
                     var validationResults = new List<ValidationResult>();
@@ -162,61 +176,121 @@ namespace PeliculasUdemyWebAPI.Servicios
             return package.GetAsByteArray();
         }
 
-        // Método privado para mapear una fila del Excel a un DTO genérico utilizando reflexión (basado en los nombres de las columnas)
-        private TDto MapearFilaADto<TDto>(ExcelWorksheet worksheet, int fila, string[] columnas)
+        // Método para mapear una fila del Excel a un DTO, intentando convertir los valores y capturando errores específicos de conversión para cada campo
+        private (TDto dto, List<(string Campo, string Mensaje)> errores) MapearFilaADtoConValidacion<TDto>(
+            ExcelWorksheet worksheet,
+            int fila,
+            string[] columnas)
             where TDto : class, new()
         {
-            // Crear una nueva instancia del DTO genérico y obtener las propiedades de la clase DTO
             var dto = new TDto();
             var propiedades = typeof(TDto).GetProperties();
+            var errores = new List<(string Campo, string Mensaje)>();
 
-            // Iterar sobre las columnas esperadas, buscar la propiedad correspondiente en el DTO
-            // y asignar el valor de la celda convertida al tipo de la propiedad
+            // Iterar sobre cada columna esperada
             for (int i = 0; i < columnas.Length; i++)
             {
                 var nombrePropiedad = columnas[i];
                 var propiedad = propiedades.FirstOrDefault(p =>
-                    p.Name.Equals(nombrePropiedad, StringComparison.OrdinalIgnoreCase));
+                    p.Name.Equals(nombrePropiedad, StringComparison.OrdinalIgnoreCase)); // Buscar la propiedad del DTO que coincide con el nombre de la columna (ignorando mayúsculas/minúsculas)
 
                 if (propiedad != null && propiedad.CanWrite)
                 {
                     var valorCelda = worksheet.Cells[fila, i + 1].Text?.Trim();
-                    var valorConvertido = ConvertirValor(valorCelda, propiedad.PropertyType);
-                    propiedad.SetValue(dto, valorConvertido);
+
+                    // Intentar convertir el valor de la celda al tipo de dato de la propiedad, capturando errores específicos de conversión
+                    var (exito, valorConvertido, mensajeError) = TryConvertirValor(valorCelda, propiedad.PropertyType, nombrePropiedad);
+
+                    if (!exito)
+                    {
+                        errores.Add((nombrePropiedad, mensajeError!)); // Si la conversión falla, agregar un error específico para ese campo
+                    }
+                    else
+                    {
+                        propiedad.SetValue(dto, valorConvertido); // Si la conversión es exitosa, asignar el valor convertido a la propiedad del DTO
+                    }
                 }
             }
 
-            return dto; // Devolver el DTO mapeado con los valores de la fila del Excel
+            return (dto, errores); // Devolver el DTO mapeado junto con la lista de errores de conversión (si los hubo) para que puedan ser reportados al usuario
         }
 
-        // Método privado para convertir el valor de una celda del Excel al tipo de dato de la propiedad del DTO, manejando tipos comunes y valores nulos
-        private object? ConvertirValor(string? valor, Type tipoDestino)
+        // Método para intentar convertir un valor de celda a un tipo de dato específico, manejando tipos comunes como int, decimal, DateTime, bool y enums, y devolviendo mensajes de error claros en caso de fallos de conversión
+        private (bool exito, object? valor, string? mensajeError) TryConvertirValor(
+            string? valor,
+            Type tipoDestino,
+            string nombreCampo)
         {
+            // Permitir valores vacíos para tipos nullable
             if (string.IsNullOrWhiteSpace(valor))
-                return tipoDestino.IsValueType ? Activator.CreateInstance(tipoDestino) : null;
+            {
+                var esNullable = Nullable.GetUnderlyingType(tipoDestino) != null || !tipoDestino.IsValueType;
+                if (esNullable)
+                {
+                    return (true, null, null);
+                }
+                else
+                {
+                    return (false, null, $"El campo '{nombreCampo}' no puede estar vacío");
+                }
+            }
 
             try
             {
+                // Obtener el tipo real en caso de que sea nullable para manejar la conversión correctamente
                 var tipoReal = Nullable.GetUnderlyingType(tipoDestino) ?? tipoDestino;
 
+                // Manejar tipos comunes con mensajes de error específicos para cada tipo en caso de fallos de conversión
                 if (tipoReal == typeof(int))
-                    return int.Parse(valor);
-                if (tipoReal == typeof(decimal))
-                    return decimal.Parse(valor);
-                if (tipoReal == typeof(double))
-                    return double.Parse(valor);
-                if (tipoReal == typeof(DateTime))
-                    return DateTime.Parse(valor);
-                if (tipoReal == typeof(bool))
-                    return bool.Parse(valor);
-                if (tipoReal.IsEnum)
-                    return Enum.Parse(tipoReal, valor, true);
+                {
+                    if (int.TryParse(valor, out var resultado))
+                        return (true, resultado, null);
+                    return (false, null, $"'{valor}' no es un número entero válido para '{nombreCampo}'");
+                }
 
-                return valor;
+                if (tipoReal == typeof(decimal))
+                {
+                    if (decimal.TryParse(valor, out var resultado))
+                        return (true, resultado, null);
+                    return (false, null, $"'{valor}' no es un número decimal válido para '{nombreCampo}'");
+                }
+
+                if (tipoReal == typeof(double))
+                {
+                    if (double.TryParse(valor, out var resultado))
+                        return (true, resultado, null);
+                    return (false, null, $"'{valor}' no es un número válido para '{nombreCampo}'");
+                }
+
+                if (tipoReal == typeof(DateTime))
+                {
+                    if (DateTime.TryParse(valor, out var resultado))
+                        return (true, resultado, null);
+                    return (false, null, $"'{valor}' no es una fecha válida para '{nombreCampo}'. Use formato: dd/MM/yyyy o yyyy-MM-dd");
+                }
+
+                if (tipoReal == typeof(bool))
+                {
+                    if (bool.TryParse(valor, out var resultado))
+                        return (true, resultado, null);
+                    return (false, null, $"'{valor}' no es un valor booleano válido para '{nombreCampo}'. Use: true/false o sí/no");
+                }
+
+                if (tipoReal.IsEnum)
+                {
+                    if (Enum.TryParse(tipoReal, valor, true, out var resultado))
+                        return (true, resultado, null);
+
+                    var valoresPermitidos = string.Join(", ", Enum.GetNames(tipoReal));
+                    return (false, null, $"'{valor}' no es válido para '{nombreCampo}'. Valores permitidos: {valoresPermitidos}");
+                }
+
+                // Para otros tipos, devolver el valor como string y dejar que la validación posterior maneje cualquier error de formato o tipo
+                return (true, valor, null);
             }
-            catch
+            catch (Exception ex)
             {
-                return tipoDestino.IsValueType ? Activator.CreateInstance(tipoDestino) : null;
+                return (false, null, $"Error al convertir '{valor}' para '{nombreCampo}': {ex.Message}");
             }
         }
     }
