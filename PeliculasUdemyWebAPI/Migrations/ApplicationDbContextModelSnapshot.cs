@@ -274,9 +274,6 @@ namespace PeliculasUdemyWebAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CategoriaId")
-                        .HasColumnType("int");
-
                     b.Property<int>("Clasificacion")
                         .HasColumnType("int");
 
@@ -302,9 +299,37 @@ namespace PeliculasUdemyWebAPI.Migrations
 
                     b.HasKey("Id");
 
+                    b.ToTable("Peliculas");
+                });
+
+            modelBuilder.Entity("PeliculasUdemyWebAPI.Modelos.PeliculaActor", b =>
+                {
+                    b.Property<int>("PeliculaId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ActorId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PeliculaId", "ActorId");
+
+                    b.HasIndex("ActorId");
+
+                    b.ToTable("PeliculaActores");
+                });
+
+            modelBuilder.Entity("PeliculasUdemyWebAPI.Modelos.PeliculaCategoria", b =>
+                {
+                    b.Property<int>("PeliculaId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CategoriaId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PeliculaId", "CategoriaId");
+
                     b.HasIndex("CategoriaId");
 
-                    b.ToTable("Peliculas");
+                    b.ToTable("PeliculaCategorias");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -358,15 +383,59 @@ namespace PeliculasUdemyWebAPI.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PeliculasUdemyWebAPI.Modelos.Pelicula", b =>
+            modelBuilder.Entity("PeliculasUdemyWebAPI.Modelos.PeliculaActor", b =>
+                {
+                    b.HasOne("PeliculasUdemyWebAPI.Modelos.Actor", "Actor")
+                        .WithMany("PeliculaActores")
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PeliculasUdemyWebAPI.Modelos.Pelicula", "Pelicula")
+                        .WithMany("PeliculaActores")
+                        .HasForeignKey("PeliculaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Actor");
+
+                    b.Navigation("Pelicula");
+                });
+
+            modelBuilder.Entity("PeliculasUdemyWebAPI.Modelos.PeliculaCategoria", b =>
                 {
                     b.HasOne("PeliculasUdemyWebAPI.Modelos.Categoria", "Categoria")
-                        .WithMany()
+                        .WithMany("PeliculaCategorias")
                         .HasForeignKey("CategoriaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PeliculasUdemyWebAPI.Modelos.Pelicula", "Pelicula")
+                        .WithMany("PeliculaCategorias")
+                        .HasForeignKey("PeliculaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Categoria");
+
+                    b.Navigation("Pelicula");
+                });
+
+            modelBuilder.Entity("PeliculasUdemyWebAPI.Modelos.Actor", b =>
+                {
+                    b.Navigation("PeliculaActores");
+                });
+
+            modelBuilder.Entity("PeliculasUdemyWebAPI.Modelos.Categoria", b =>
+                {
+                    b.Navigation("PeliculaCategorias");
+                });
+
+            modelBuilder.Entity("PeliculasUdemyWebAPI.Modelos.Pelicula", b =>
+                {
+                    b.Navigation("PeliculaActores");
+
+                    b.Navigation("PeliculaCategorias");
                 });
 #pragma warning restore 612, 618
         }

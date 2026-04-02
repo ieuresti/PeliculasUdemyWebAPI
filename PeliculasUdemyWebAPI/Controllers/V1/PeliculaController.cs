@@ -104,8 +104,20 @@ namespace PeliculasUdemyWebAPI.Controllers.V1
                 pelicula.Poster = url;
             }
 
+            // Asignar las categorías
+            pelicula.PeliculaCategorias = peliculaCreacionDTO.CategoriasIds
+                .Select(id => new PeliculaCategoria { CategoriaId = id })
+                .ToList();
+
+            // Asignar los actores
+            pelicula.PeliculaActores = peliculaCreacionDTO.ActoresIds
+                .Select(id => new PeliculaActor { ActorId = id })
+                .ToList();
+
             await peliculaRepository.CrearPeliculaAsync(pelicula);
-            var peliculaDTO = mapper.Map<PeliculaDTO>(pelicula);
+            // Después de crear la película, obtenemos la película con sus relaciones para devolverla en la respuesta
+            var peliculaConRelaciones = await peliculaRepository.GetPeliculaAsync(pelicula.Id);
+            var peliculaDTO = mapper.Map<PeliculaDTO>(peliculaConRelaciones);
             return CreatedAtRoute("GetPelicula", new { peliculaId = peliculaDTO.Id }, peliculaDTO);
         }
 
@@ -125,20 +137,30 @@ namespace PeliculasUdemyWebAPI.Controllers.V1
             {
                 return BadRequest(ModelState);
             }
-            if (!await peliculaRepository.ExistePeliculaAsync(peliculaId))
+            var peliculaDB = await peliculaRepository.GetPeliculaAsync(peliculaId);
+            if (peliculaDB is null)
             {
                 return NotFound();
             }
 
-            var pelicula = mapper.Map<Pelicula>(peliculaCreacionDTO);
+            peliculaDB = mapper.Map(peliculaCreacionDTO, peliculaDB); // Mapeamos el DTO a la entidad Pelicula existente, actualizando solo los campos que se han enviado en el DTO
             if (peliculaCreacionDTO.Poster is not null)
             {
                 // Si se ha enviado un nuevo archivo de poster, lo almacenamos y obtenemos la URL para actualizarla en la base de datos. Además, eliminamos el archivo anterior si existía.
-                pelicula.Poster = await almacenadorArchivos.Editar(pelicula.Poster, contenedor, peliculaCreacionDTO.Poster);
+                peliculaDB.Poster = await almacenadorArchivos.Editar(peliculaDB.Poster, contenedor, peliculaCreacionDTO.Poster);
             }
-            pelicula.Id = peliculaId;
 
-            await peliculaRepository.ActualizarPeliculaAsync(pelicula);
+            // Actualizar categorías
+            peliculaDB.PeliculaCategorias = peliculaCreacionDTO.CategoriasIds
+                .Select(id => new PeliculaCategoria { PeliculaId = peliculaId, CategoriaId = id })
+                .ToList();
+
+            // Actualizar actores
+            peliculaDB.PeliculaActores = peliculaCreacionDTO.ActoresIds
+                .Select(id => new PeliculaActor { PeliculaId = peliculaId, ActorId = id })
+                .ToList();
+
+            await peliculaRepository.ActualizarPeliculaAsync(peliculaDB);
             return NoContent();
         }
 

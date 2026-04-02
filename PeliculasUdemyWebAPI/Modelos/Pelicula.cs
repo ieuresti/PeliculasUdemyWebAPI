@@ -37,9 +37,7 @@ namespace PeliculasUdemyWebAPI.Modelos
         [Required(ErrorMessage = "El campo {0} es obligatorio")]
         public DateTime FechaCreacion { get; set; }
 
-        [Required(ErrorMessage = "El campo {0} es obligatorio")]
-        public int CategoriaId { get; set; } // Clave foránea para la relación con la entidad Categoria
-        [ForeignKey("CategoriaId")]
-        public Categoria Categoria { get; set; } // Propiedad de navegación para la relación con la entidad Categoria
+        public List<PeliculaCategoria> PeliculaCategorias { get; set; } = new List<PeliculaCategoria>(); // Propiedad de navegacion a la tabla intermedia PeliculaCategoria
+        public List<PeliculaActor> PeliculaActores { get; set; } = new List<PeliculaActor>(); // Propiedad de navegacion a la tabla intermedia PeliculaActor
     }
 }

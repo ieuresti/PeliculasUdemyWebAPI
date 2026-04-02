@@ -32,7 +32,8 @@ namespace PeliculasUdemyWebAPI.Modelos.DTOs
         [Required(ErrorMessage = "El campo {0} es obligatorio")]
         public TipoClasificacion Clasificacion { get; set; }
 
-        [Required(ErrorMessage = "El campo {0} es obligatorio")]
-        public int CategoriaId { get; set; }
+        // Lista de IDs de categorías y actores existentes para asociar la película a crear con ellos
+        public List<int> CategoriasIds { get; set; } = new List<int>();
+        public List<int> ActoresIds { get; set; } = new List<int>();
     }
 }
