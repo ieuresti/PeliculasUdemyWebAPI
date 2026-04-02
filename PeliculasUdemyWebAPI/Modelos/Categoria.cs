@@ -12,5 +12,8 @@ namespace PeliculasUdemyWebAPI.Modelos
 
         [Required]
         public DateTime FechaCreacion { get; set; }
+
+        // Propiedad de navegación a la tabla intermedia PeliculaCategoria
+        public List<PeliculaCategoria> PeliculaCategorias { get; set; } = new List<PeliculaCategoria>();
     }
 }

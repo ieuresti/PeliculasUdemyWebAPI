@@ -23,6 +23,8 @@
 
         public DateTime FechaCreacion { get; set; }
 
-        public int CategoriaId { get; set; }
+        // Listas de categorías y actores asociados a la película para mostrar en la respuesta de la API
+        public List<CategoriaDTO> Categorias { get; set; } = new List<CategoriaDTO>();
+        public List<ActorDTO> Actores { get; set; } = new List<ActorDTO>();
     }
 }

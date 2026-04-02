@@ -17,5 +17,8 @@ namespace PeliculasUdemyWebAPI.Modelos
 
         [Unicode(false)] // Va a ser una URL y no se necesitan todos los caracteres Unicode (emojis, acentos, etc.)
         public string? Foto { get; set; }
+
+        // Propiedad de navegación a la tabla intermedia PeliculaActor
+        public List<PeliculaActor> PeliculaActores { get; set; } = new List<PeliculaActor>();
     }
 }

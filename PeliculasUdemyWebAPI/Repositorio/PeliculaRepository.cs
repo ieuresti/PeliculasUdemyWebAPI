@@ -29,7 +29,12 @@ namespace PeliculasUdemyWebAPI.Repositorio
 
         public async Task<IEnumerable<Pelicula>> BuscarPeliculaAsync(string nombre)
         {
-            IQueryable<Pelicula> query = context.Peliculas;
+            IQueryable<Pelicula> query = context.Peliculas
+                .Include(p => p.PeliculaCategorias)
+                    .ThenInclude(pc => pc.Categoria)
+                .Include(p => p.PeliculaActores)
+                    .ThenInclude(pa => pa.Actor);
+
             if (!string.IsNullOrEmpty(nombre))
             {
                 query = query.Where(
@@ -58,12 +63,21 @@ namespace PeliculasUdemyWebAPI.Repositorio
 
         public async Task<Pelicula?> GetPeliculaAsync(int peliculaId)
         {
-            return await context.Peliculas.FirstOrDefaultAsync(p => p.Id == peliculaId);
+            return await context.Peliculas
+                .Include(p => p.PeliculaCategorias)
+                    .ThenInclude(pc => pc.Categoria)
+                .Include(p => p.PeliculaActores)
+                    .ThenInclude(pa => pa.Actor)
+                .FirstOrDefaultAsync(p => p.Id == peliculaId);
         }
 
         public async Task<ICollection<Pelicula>> GetPeliculasAsync(int pageNumber, int pageSize)
         {
             return await context.Peliculas
+                .Include(p => p.PeliculaCategorias)
+                    .ThenInclude(pc => pc.Categoria)
+                .Include(p => p.PeliculaActores)
+                    .ThenInclude(pa => pa.Actor)
                 .OrderBy(p => p.Nombre)
                 .Skip((pageNumber - 1) * pageSize) // Calcula el número de registros a omitir según la página actual y el tamaño de página
                 .Take(pageSize) // Toma el número de registros según el tamaño de página
@@ -73,7 +87,11 @@ namespace PeliculasUdemyWebAPI.Repositorio
         public async Task<ICollection<Pelicula>> GetPeliculasEnCategoriaAsync(int categoriaId)
         {
             return await context.Peliculas
-                .Where(p => p.CategoriaId == categoriaId)
+                .Include(p => p.PeliculaCategorias)
+                    .ThenInclude(pc => pc.Categoria)
+                .Include(p => p.PeliculaActores)
+                    .ThenInclude(pa => pa.Actor)
+                .Where(p => p.PeliculaCategorias.Any(pc => pc.CategoriaId == categoriaId))
                 .OrderBy(p => p.Nombre)
                 .ToListAsync();
         }
